@@ -39,28 +39,17 @@
     var audioOptions = options.audio || {};
     this.audio = audioOptions;
 
-    var colors = [];
-
-    if (typeof options.colors === 'function') {
-      colors = options.colors(275);
-    } else {
-      colors = this._generateDefaultColors(275);
-    }
-
-    this._colors = colors;
-
     this._baseCanvasContext.fillStyle = this._getColor(0);
     this._baseCanvasContext.fillRect(0, 0, this._baseCanvas.width, this._baseCanvas.height);
   }
 
   Spectrogram.prototype._init = function() {
     var source = this._sources.audioBufferStream;
-    source.scriptNode = source.audioContext.createScriptProcessor(2048, 1, 1);
+    source.scriptNode = source.audioContext.createScriptProcessor(4096, 1, 1);
     source.scriptNode.connect(source.audioContext.destination);
     source.scriptNode.onaudioprocess = function(event) {
-      var array = new Uint8Array(source.analyser.frequencyBinCount);
-      source.analyser.getByteFrequencyData(array);
-
+      var array = new Float32Array(source.analyser.frequencyBinCount);
+      source.analyser.getFloatFrequencyData(array);
       this._draw(array, source.canvasContext);
     }.bind(this);
 
@@ -69,8 +58,8 @@
     }.bind(this);
 
     source.analyser = source.audioContext.createAnalyser();
-    source.analyser.smoothingTimeConstant = 0;
-    source.analyser.fftSize = 1024;
+    source.analyser.smoothingTimeConstant = 2;
+    source.analyser.fftSize = 2048;
 
     source.analyser.connect(source.scriptNode);
     source.sourceNode.connect(source.analyser);
@@ -91,18 +80,19 @@
       var tempCanvas = tempCanvasContext.canvas;
       tempCanvasContext.drawImage(canvas, 0, 0, width, height);
 
+      //console.log(array);
+
       for (var i = 0; i < array.length; i++) {
         var value = array[i];
-        canvasContext.fillStyle = this._getColor(value);
+        canvasContext.fillStyle = this._getColor(2*(100+value));
         if (this._audioEnded) {
           canvasContext.fillStyle = this._getColor(0);
         }
-        canvasContext.fillRect(width - 1, height - i, 1, 1);
+        canvasContext.fillRect(width - 1, height - 2*i, 1, 2);
       }
 
       canvasContext.translate(-1, 0);
       // draw prev canvas before translation
-      canvasContext.drawImage(tempCanvas, 0, 0, width, height, 0, 0, width, height);
       canvasContext.drawImage(tempCanvas, 0, 0, width, height, 0, 0, width, height);
       // reset transformation matrix
       canvasContext.setTransform(1, 0, 0, 1, 0, 0);
@@ -112,8 +102,8 @@
 
   Spectrogram.prototype._startMediaStreamDraw = function(analyser, canvasContext) {
     window.requestAnimationFrame(this._startMediaStreamDraw.bind(this, analyser, canvasContext));
-    var audioData = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(audioData);
+    var audioData = new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatFrequencyData(audioData);
     this._draw(audioData, canvasContext);
   };
 
@@ -235,34 +225,8 @@
     this._baseCanvasContext.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  Spectrogram.prototype._generateDefaultColors = function(steps) {
-    var frequency = Math.PI / steps;
-    var amplitude = 127;
-    var center = 128;
-    var slice = (Math.PI / 2) * 3.1;
-    var colors = [];
-
-    function toRGBString(v) {
-      return 'rgba(' + [v,v,v,1].toString() + ')';
-    }
-
-    for (var i = 0; i < steps; i++) {
-      var v = (Math.sin((frequency * i) + slice) * amplitude + center) >> 0;
-
-      colors.push(toRGBString(v));
-    }
-
-    return colors;
-  };
-
   Spectrogram.prototype._getColor = function(index) {
-    var color = this._colors[index>>0];
-
-    if (typeof color === 'undefined') {
-      color = this._colors[0];
-    }
-
-    return color;
+    return d3.interpolateYlGnBu(index/300);
   };
 
   if (typeof exports !== 'undefined') {
