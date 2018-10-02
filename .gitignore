@@ -96,6 +96,7 @@ _test
 _archive
 uploads
 tmp
+log
 
 # Vim files to ignore #
 #######################
