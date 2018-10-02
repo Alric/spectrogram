@@ -1,8 +1,8 @@
 (function(root) {
-  'use strict';
+  "use strict";
 
   function _isFunction(v) {
-    return typeof v === 'function';
+    return typeof v === "function";
   }
 
   function _result(v) {
@@ -26,21 +26,30 @@
       userMediaStream: null
     };
     this._baseCanvas = canvas;
-    this._baseCanvasContext = this._baseCanvas.getContext('2d');
+    this._baseCanvasContext = this._baseCanvas.getContext("2d");
 
-    this._baseCanvas.width = _result(baseCanvasOptions.width) || this._baseCanvas.width;
-    this._baseCanvas.height = _result(baseCanvasOptions.height) || this._baseCanvas.height;
+    this._baseCanvas.width =
+      _result(baseCanvasOptions.width) || this._baseCanvas.width;
+    this._baseCanvas.height =
+      _result(baseCanvasOptions.height) || this._baseCanvas.height;
 
     window.onresize = function() {
-      this._baseCanvas.width = _result(baseCanvasOptions.width) || this._baseCanvas.width;
-      this._baseCanvas.height = _result(baseCanvasOptions.height) || this._baseCanvas.height;
+      this._baseCanvas.width =
+        _result(baseCanvasOptions.width) || this._baseCanvas.width;
+      this._baseCanvas.height =
+        _result(baseCanvasOptions.height) || this._baseCanvas.height;
     }.bind(this);
 
     var audioOptions = options.audio || {};
     this.audio = audioOptions;
 
     this._baseCanvasContext.fillStyle = this._getColor(0);
-    this._baseCanvasContext.fillRect(0, 0, this._baseCanvas.width, this._baseCanvas.height);
+    this._baseCanvasContext.fillRect(
+      0,
+      0,
+      this._baseCanvas.width,
+      this._baseCanvas.height
+    );
   }
 
   Spectrogram.prototype._init = function() {
@@ -69,39 +78,54 @@
   };
 
   Spectrogram.prototype._draw = function(array, canvasContext) {
-      if (this._paused) {
-        return false;
+    if (this._paused) {
+      return false;
+    }
+
+    var canvas = canvasContext.canvas;
+    var width = canvas.width;
+    var height = canvas.height;
+    var tempCanvasContext = canvasContext._tempContext;
+    var tempCanvas = tempCanvasContext.canvas;
+    tempCanvasContext.drawImage(canvas, 0, 0, width, height);
+
+    //console.log(array);
+
+    for (var i = 0; i < array.length; i++) {
+      var value = array[i];
+      canvasContext.fillStyle = this._getColor(2 * (100 + value));
+      if (this._audioEnded) {
+        canvasContext.fillStyle = this._getColor(0);
       }
+      canvasContext.fillRect(width - 1, height - 2 * i, 1, 2);
+    }
 
-      var canvas = canvasContext.canvas;
-      var width = canvas.width;
-      var height = canvas.height;
-      var tempCanvasContext = canvasContext._tempContext;
-      var tempCanvas = tempCanvasContext.canvas;
-      tempCanvasContext.drawImage(canvas, 0, 0, width, height);
+    canvasContext.translate(-1, 0);
+    // draw prev canvas before translation
+    canvasContext.drawImage(
+      tempCanvas,
+      0,
+      0,
+      width,
+      height,
+      0,
+      0,
+      width,
+      height
+    );
+    // reset transformation matrix
+    canvasContext.setTransform(1, 0, 0, 1, 0, 0);
 
-      //console.log(array);
-
-      for (var i = 0; i < array.length; i++) {
-        var value = array[i];
-        canvasContext.fillStyle = this._getColor(2*(100+value));
-        if (this._audioEnded) {
-          canvasContext.fillStyle = this._getColor(0);
-        }
-        canvasContext.fillRect(width - 1, height - 2*i, 1, 2);
-      }
-
-      canvasContext.translate(-1, 0);
-      // draw prev canvas before translation
-      canvasContext.drawImage(tempCanvas, 0, 0, width, height, 0, 0, width, height);
-      // reset transformation matrix
-      canvasContext.setTransform(1, 0, 0, 1, 0, 0);
-
-      this._baseCanvasContext.drawImage(canvas, 0, 0, width, height);
+    this._baseCanvasContext.drawImage(canvas, 0, 0, width, height);
   };
 
-  Spectrogram.prototype._startMediaStreamDraw = function(analyser, canvasContext) {
-    window.requestAnimationFrame(this._startMediaStreamDraw.bind(this, analyser, canvasContext));
+  Spectrogram.prototype._startMediaStreamDraw = function(
+    analyser,
+    canvasContext
+  ) {
+    window.requestAnimationFrame(
+      this._startMediaStreamDraw.bind(this, analyser, canvasContext)
+    );
     var audioData = new Float32Array(analyser.frequencyBinCount);
     analyser.getFloatFrequencyData(audioData);
     this._draw(audioData, canvasContext);
@@ -111,12 +135,15 @@
     var source = this._sources.audioBufferStream || {};
 
     // clear current audio process
-    if (toString.call(source.scriptNode) === '[object ScriptProcessorNode]') {
+    if (toString.call(source.scriptNode) === "[object ScriptProcessorNode]") {
       source.scriptNode.onaudioprocess = null;
     }
 
-    if (toString.call(audioBuffer) === '[object AudioBuffer]') {
-      audioContext = (!audioContext && source.audioBuffer.context) || (!audioContext && source.audioContext) || audioContext;
+    if (toString.call(audioBuffer) === "[object AudioBuffer]") {
+      audioContext =
+        (!audioContext && source.audioBuffer.context) ||
+        (!audioContext && source.audioContext) ||
+        audioContext;
 
       var sourceNode = audioContext.createBufferSource();
       sourceNode.buffer = audioBuffer;
@@ -124,16 +151,16 @@
       var canvasContext = source.canvasContext;
 
       if (!source.canvasContext) {
-        var canvas = document.createElement('canvas');
+        var canvas = document.createElement("canvas");
         canvas.width = this._baseCanvas.width;
         canvas.height = this._baseCanvas.height;
-        canvasContext = canvas.getContext('2d');
+        canvasContext = canvas.getContext("2d");
 
-        var tempCanvas = document.createElement('canvas');
+        var tempCanvas = document.createElement("canvas");
         tempCanvas.width = canvas.width;
         tempCanvas.height = canvas.height;
 
-        canvasContext._tempContext = tempCanvas.getContext('2d');
+        canvasContext._tempContext = tempCanvas.getContext("2d");
       }
 
       source = {
@@ -149,7 +176,7 @@
       this._init();
     }
 
-    if (toString.call(audioBuffer) === '[object AnalyserNode]') {
+    if (toString.call(audioBuffer) === "[object AnalyserNode]") {
       source = this._sources.userMediaStream || {};
       source.analyser = audioBuffer;
       this._sources.userMediaStream = source;
@@ -161,7 +188,7 @@
     var sourceMedia = this._sources.userMediaStream;
 
     if (source && source.sourceNode) {
-      source.sourceNode.start(0, offset||0);
+      source.sourceNode.start(0, offset || 0);
       this._audioEnded = false;
       this._paused = false;
       this._startedAt = Date.now();
@@ -170,16 +197,16 @@
     // media stream uses an analyser for audio data
     if (sourceMedia && sourceMedia.analyser) {
       source = sourceMedia;
-      var canvas = document.createElement('canvas');
+      var canvas = document.createElement("canvas");
       canvas.width = this._baseCanvas.width;
       canvas.height = this._baseCanvas.height;
-      var canvasContext = canvas.getContext('2d');
+      var canvasContext = canvas.getContext("2d");
 
-      var tempCanvas = document.createElement('canvas');
+      var tempCanvas = document.createElement("canvas");
       tempCanvas.width = canvas.width;
       tempCanvas.height = canvas.height;
 
-      canvasContext._tempContext = tempCanvas.getContext('2d');
+      canvasContext._tempContext = tempCanvas.getContext("2d");
 
       this._startMediaStreamDraw(source.analyser, canvasContext);
     }
@@ -203,9 +230,9 @@
     var source = this._sources[0];
     this._paused = false;
     if (this._pausedAt) {
-		  this._startedAt = Date.now() - this._pausedAt;
+      this._startedAt = Date.now() - this._pausedAt;
       this.connectSource(source.audioBuffer, source.audioContext);
-      this.start(offset || (this._pausedAt / 1000));
+      this.start(offset || this._pausedAt / 1000);
     }
   };
 
@@ -214,7 +241,7 @@
 
     this.stop();
 
-    if (toString.call(source.scriptNode) === '[object ScriptProcessorNode]') {
+    if (toString.call(source.scriptNode) === "[object ScriptProcessorNode]") {
       source.scriptNode.onaudioprocess = null;
     }
 
@@ -226,20 +253,19 @@
   };
 
   Spectrogram.prototype._getColor = function(index) {
-    return d3.interpolateYlGnBu(index/300);
+    return d3.interpolateYlGnBu(index / 300);
   };
 
-  if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
+  if (typeof exports !== "undefined") {
+    if (typeof module !== "undefined" && module.exports) {
       exports = module.exports = Spectrogram;
     }
     exports.Spectrogram = Spectrogram;
-  } else if (typeof define === 'function' && define.amd) {
+  } else if (typeof define === "function" && define.amd) {
     define([], function() {
       return Spectrogram;
     });
   } else {
     root.Spectrogram = Spectrogram;
   }
-
 })(this);
