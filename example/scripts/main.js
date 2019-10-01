@@ -8,6 +8,7 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
 try {
   audioContext = new AudioContext();
 } catch (e) {
+  console.log('No web audio support in this browser!');
   alert('No web audio support in this browser!');
 }
 
