@@ -11,3 +11,4 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Support for media stream
 - Audio play toggling options
 - Custom colors option
+- git ignore
